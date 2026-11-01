@@ -1,0 +1,16 @@
+# local database and any exported member lists (personal data stays out of git)
+data/
+*.csv
+*.db
+*.db-wal
+*.db-shm
+
+__pycache__/
+*.pyc
+.vercel
+.DS_Store
+.env
+.env.*
+
+# editor / app settings
+.claude/
