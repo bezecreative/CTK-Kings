@@ -99,7 +99,9 @@
     state.family = null; state.selected = new Set(); state.labels = null; state.code = null;
     clearInterval(countdownTimer);
     render('<div class="shell">'
-      + '<button class="btn btn-secondary home-checkout" id="goCheckout">Check out</button>'
+      + '<div class="home-menu" id="homeMenu"><button class="menu-btn" id="menuBtn" aria-label="Menu" aria-expanded="false">'
+      + '<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button>'
+      + '<div class="menu-list hidden" id="menuList"><button class="menu-item" id="goCheckout">Check out</button><a class="menu-item" href="/admin">Staff admin</a></div></div>'
       + '<div class="topbar center-top">' + brand() + '</div>'
       + '<div class="hero"><h1>Welcome! Let\'s get you checked in.</h1></div>'
       + '<div class="search-wrap"><span class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg></span><input id="q" class="input input-lg" placeholder="Last name or phone number" autocomplete="off" autocapitalize="words" enterkeyhint="search"></div>'
@@ -115,6 +117,13 @@
     q.addEventListener('keydown', (e) => { if (e.key === 'Enter') { clearTimeout(searchTimer); search(q.value.trim()); } });
     $('#newFamily').addEventListener('click', showNewFamily);
     $('#goCheckout').addEventListener('click', showCheckout);
+    const menuBtn = $('#menuBtn'), menuList = $('#menuList');
+    menuBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const open = menuList.classList.toggle('hidden');
+      menuBtn.setAttribute('aria-expanded', String(!open));
+    });
+    document.addEventListener('click', (e) => { if (!e.target.closest('#homeMenu')) menuList.classList.add('hidden'); });
   }
 
   /* ---- check out (by pickup code) -------------------------------------- */

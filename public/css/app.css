@@ -66,7 +66,21 @@ a { color: var(--primary); }
 .brand-sub { font-size: 0.78em; font-weight: 700; color: var(--muted); padding: 4px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); white-space: nowrap; }
 /* kiosk start screen: logo centered and larger, Check out button top right */
 .shell { position: relative; }
-.home-checkout { position: absolute; top: 8px; right: 8px; min-height: 34px; padding: 6px 12px; font-size: 0.78em; border-radius: 9px; }
+.home-menu { position: absolute; top: 8px; right: 8px; z-index: 30; }
+.menu-btn {
+  width: 42px; height: 42px; border-radius: 10px; border: 1px solid var(--border); background: var(--surface); color: var(--text);
+  display: grid; place-items: center; cursor: pointer; padding: 0;
+}
+.menu-btn:hover { background: var(--surface-2); }
+.menu-list {
+  position: absolute; right: 0; top: 48px; min-width: 180px; background: var(--surface); border: 1px solid var(--border);
+  border-radius: 12px; box-shadow: var(--shadow); padding: 6px; display: flex; flex-direction: column; gap: 2px;
+}
+.menu-item {
+  display: block; width: 100%; text-align: left; padding: 10px 12px; border-radius: 8px; border: 0; background: none;
+  font: inherit; font-weight: 600; color: var(--text); cursor: pointer; text-decoration: none;
+}
+.menu-item:hover { background: var(--surface-2); }
 .center-top { justify-content: center; padding: 14px 0 6px; }
 .center-top .brand { flex-direction: column; gap: 10px; }
 .center-top .brand-img { height: 78px; max-width: 72vw; }
