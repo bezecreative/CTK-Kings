@@ -68,7 +68,7 @@ const LabelPreview = (() => {
       + '<div class="lbl-rule"></div>'
       + '<div class="lbl-allergy">' + esc(line) + '</div>'
       + '<div class="lbl-rule"></div>'
-      + '<div class="lbl-foot"><span>' + esc(f.parent_name || '') + '</span></div>'
+      + '<div class="lbl-foot"><span>' + esc(f.parent_name || '') + '</span><span>' + esc(f.parent_phone || '') + '</span></div>'
       + '</div>'
       + (showCode ? '<div class="lbl-bar">' + String(f.code).split('').map((ch) => '<span>' + esc(ch) + '</span>').join('') + '<span class="chk">✓</span></div>' : '')
       + '</div>';

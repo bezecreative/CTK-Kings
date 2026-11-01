@@ -154,11 +154,16 @@ def child_label(fields, label_cfg):
     c.rule(m, y, col_w)
     y += int(H * 0.035)
 
-    # Parent name, bottom-aligned
+    # Parent name (left) and phone (right), bottom-aligned
     pn = fields.get("parent_name") or ""
+    pp = fields.get("parent_phone") or ""
     ph = int(H * 0.065)
     fy = max(y, bottom - int(ph * 1.1))
-    c.text(m, fy, ph, pn, col_w, "L")
+    if pp:
+        c.text(m, fy, ph, pn, int(col_w * 0.58), "L")
+        c.text(m + int(col_w * 0.58), fy, ph, pp, col_w - int(col_w * 0.58), "R")
+    else:
+        c.text(m, fy, ph, pn, col_w, "L")
     return c.zpl()
 
 
