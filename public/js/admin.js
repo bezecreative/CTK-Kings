@@ -88,10 +88,10 @@
     app.innerHTML = '<div class="admin-shell">'
       + '<div class="topbar">' + brandHtml(state.settings.org_name, 'Kids Check-In · Admin')
       + '<div class="row"><a class="btn btn-secondary btn-sm" href="/" target="_blank">Open kiosk ↗</a><button class="btn btn-ghost btn-sm" id="logout">Sign out</button></div></div>'
-      + '<div class="tabs" id="tabs">' + TABS.map(([id, name]) => '<button class="tab" data-tab="' + id + '">' + name + '</button>').join('') + '</div>'
+      + '<div class="tabs"><select class="select" id="tabSelect" style="max-width:260px;font-weight:600">' + TABS.map(([id, name]) => '<option value="' + id + '">' + name + '</option>').join('') + '</select></div>'
       + '<div id="view"></div></div>';
     $('#logout').addEventListener('click', () => { Api.setToken(''); location.reload(); });
-    $('#tabs').addEventListener('click', (e) => { const t = e.target.closest('.tab'); if (t) go(t.dataset.tab); });
+    $('#tabSelect').addEventListener('change', (e) => go(e.target.value));
     window.addEventListener('hashchange', () => go(location.hash.slice(1) || 'today', true));
     go(location.hash.slice(1) || 'today', true);
   }
@@ -100,7 +100,8 @@
     if (!TABS.some(([id]) => id === tab)) tab = 'today';
     state.tab = tab;
     if (!fromHash) location.hash = tab;
-    $$('.tab').forEach((t) => t.classList.toggle('active', t.dataset.tab === tab));
+    const sel = $('#tabSelect');
+    if (sel && sel.value !== tab) sel.value = tab;
     $$('.modal-backdrop').forEach((m) => m.remove());
     clearInterval(state.refreshTimer);
     const view = $('#view');
@@ -112,19 +113,19 @@
 
   /* ---- today ----------------------------------------------------------- */
   async function renderToday(view) {
-    view.innerHTML = '<div class="toolbar"><input type="date" class="input" id="rosterDate" value="' + state.rosterDate + '" style="max-width:200px">'
-      + '<input class="input" id="pickup" placeholder="Pickup check: type the parent\'s code" style="max-width:340px" autocomplete="off">'
+    view.innerHTML = '<div class="toolbar">'
+      + '<input class="input" id="pickup" placeholder="Type the parent\'s code" style="max-width:340px" autocomplete="off">'
       + '<button class="btn btn-secondary btn-sm" id="refresh">Refresh</button><span class="muted small" id="updated"></span></div>'
       + '<div id="pickupResult"></div><div class="stats" id="stats"></div><div class="rooms" id="rooms"></div>';
-    $('#rosterDate').addEventListener('change', (e) => { state.rosterDate = e.target.value; loadRoster(); });
     $('#refresh').addEventListener('click', loadRoster);
     $('#pickup').addEventListener('input', renderPickup);
     await loadRoster();
-    state.refreshTimer = setInterval(() => { if (state.tab === 'today' && state.rosterDate === Api.localDate()) loadRoster(); }, 30000);
+    state.refreshTimer = setInterval(() => { if (state.tab === 'today') loadRoster(); }, 30000);
   }
 
   let roster = null;
   async function loadRoster() {
+    state.rosterDate = Api.localDate();  // always today (rolls over at midnight)
     roster = await Api.get('/api/roster?date=' + state.rosterDate);
     if (state.tab !== 'today') return;
     const allRows = roster.classrooms.flatMap((r) => r.checkins).concat(roster.unassigned);
