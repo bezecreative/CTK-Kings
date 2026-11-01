@@ -190,8 +190,9 @@
     const here = matches.filter((c) => !c.checked_out_local);
     box.innerHTML = '<div class="card mb"><div class="card-title"><h3>Code ' + esc(code) + ' → ' + matches.length + (matches.length === 1 ? ' child' : ' children') + '</h3>'
       + (here.length ? '<button class="btn btn-success" id="checkoutAll">Check out ' + (here.length === 1 ? here[0].first_name : 'all ' + here.length) + '</button>' : '<span class="chip chip-ok">All checked out</span>') + '</div>'
-      + matches.map((c) => '<div class="ci' + (c.checked_out_local ? ' out' : '') + '"><div class="who"><div class="n">' + esc(c.first_name) + ' ' + esc(c.last_name) + ' <span class="kbd">' + esc(c.code) + '</span> <span class="chip chip-room" style="' + roomStyle(c.classroom) + '">' + esc(c.room) + '</span>'
-        + (c.allergies ? ' <span class="chip chip-danger">⚠ ' + esc(c.allergies) + '</span>' : '') + (c.checked_out_local ? ' <span class="chip chip-ok">Out ' + esc(c.checked_out_time) + '</span>' : '') + '</div><div class="m">' + esc(c.family_name + ' · ' + c.family_phone_display + ' · in ' + c.checked_in_time) + '</div></div></div>').join('')
+      + matches.map((c) => '<div class="ci' + (c.checked_out_local ? ' out' : '') + '" data-id="' + c.id + '"><div class="who"><div class="n">' + esc(c.first_name) + ' ' + esc(c.last_name) + ' <span class="kbd">' + esc(c.code) + '</span> <span class="chip chip-room" style="' + roomStyle(c.classroom) + '">' + esc(c.room) + '</span>'
+        + (c.allergies ? ' <span class="chip chip-danger">⚠ ' + esc(c.allergies) + '</span>' : '') + (c.checked_out_local ? ' <span class="chip chip-ok">Out ' + esc(c.checked_out_time) + '</span>' : '') + '</div><div class="m">' + esc(c.family_name + ' · ' + c.family_phone_display + ' · in ' + c.checked_in_time) + '</div></div>'
+        + '<div class="row" style="gap:6px">' + (c.checked_out_local ? '<button class="btn btn-sm btn-ghost" data-act="undo">Undo check-out</button>' : '<button class="btn btn-sm btn-success" data-act="checkout">Check out</button>') + '</div></div>').join('')
       + '</div>';
     const b = $('#checkoutAll');
     if (b) b.addEventListener('click', async () => {
@@ -201,6 +202,7 @@
         await loadRoster();
       } catch (ex) { Toast.show(ex.message, 'error'); }
     });
+    box.onclick = onRosterAction;  // per-child Check out / Undo buttons in this panel
   }
 
   /* ---- families -------------------------------------------------------- */
