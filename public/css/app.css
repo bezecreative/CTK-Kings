@@ -64,7 +64,9 @@ a { color: var(--primary); }
 .brand-img { height: 46px; width: auto; max-width: 46vw; object-fit: contain; display: block; }
 .brand-img-lg { height: 84px; max-width: 100%; margin: 0 auto 16px; }
 .brand-sub { font-size: 0.78em; font-weight: 700; color: var(--muted); padding: 4px 10px; border-radius: 999px; background: var(--surface); border: 1px solid var(--border); white-space: nowrap; }
-/* kiosk start screen: logo centered and larger */
+/* kiosk start screen: logo centered and larger, Check out button top right */
+.shell { position: relative; }
+.home-checkout { position: absolute; top: 20px; right: 16px; }
 .center-top { justify-content: center; padding: 14px 0 6px; }
 .center-top .brand { flex-direction: column; gap: 10px; }
 .center-top .brand-img { height: 78px; max-width: 72vw; }

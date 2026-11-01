@@ -99,6 +99,7 @@
     state.family = null; state.selected = new Set(); state.labels = null; state.code = null;
     clearInterval(countdownTimer);
     render('<div class="shell">'
+      + '<button class="btn btn-secondary home-checkout" id="goCheckout">Check out</button>'
       + '<div class="topbar center-top">' + brand() + '</div>'
       + '<div class="hero"><h1>Welcome! Let\'s get you checked in.</h1></div>'
       + '<div class="search-wrap"><span class="icon"><svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><circle cx="11" cy="11" r="7"/><path d="M20 20l-3.8-3.8"/></svg></span><input id="q" class="input input-lg" placeholder="Last name or phone number" autocomplete="off" autocapitalize="words" enterkeyhint="search"></div>'
@@ -113,6 +114,73 @@
     });
     q.addEventListener('keydown', (e) => { if (e.key === 'Enter') { clearTimeout(searchTimer); search(q.value.trim()); } });
     $('#newFamily').addEventListener('click', showNewFamily);
+    $('#goCheckout').addEventListener('click', showCheckout);
+  }
+
+  /* ---- check out (by pickup code) -------------------------------------- */
+  function showCheckout() {
+    clearInterval(countdownTimer);
+    render('<div class="shell">'
+      + '<div class="topbar grid-top"><button class="btn btn-secondary" id="back">‹ Back</button>' + brand() + '<div></div></div>'
+      + '<div class="card"><h1>Check out</h1><p class="muted">Type the 4-character code from your parent pickup tag.</p>'
+      + '<div class="row"><input id="code" class="input input-lg grow" placeholder="e.g. K7Q2" maxlength="4" autocomplete="off" autocapitalize="characters" spellcheck="false" style="letter-spacing:0.2em;text-transform:uppercase;max-width:320px">'
+      + '<button class="btn btn-primary btn-lg" id="find">Find</button></div>'
+      + '<div id="pickupKids" class="kids mt"></div>'
+      + '<div id="pickupActions" class="row mt"></div></div></div>', 'checkout');
+    $('#back').addEventListener('click', showHome);
+    const input = $('#code');
+    input.focus();
+    input.addEventListener('input', () => { if (input.value.trim().length === 4) lookupCode(); else { $('#pickupKids').innerHTML = ''; $('#pickupActions').innerHTML = ''; } });
+    input.addEventListener('keydown', (e) => { if (e.key === 'Enter') lookupCode(); });
+    $('#find').addEventListener('click', lookupCode);
+  }
+
+  async function lookupCode() {
+    const code = ($('#code').value || '').trim().toUpperCase();
+    const box = $('#pickupKids');
+    const actions = $('#pickupActions');
+    if (code.length < 3) return;
+    try {
+      const r = await Api.get('/api/pickup?code=' + encodeURIComponent(code) + '&date=' + Api.localDate());
+      if (!r.checkins.length) {
+        box.innerHTML = '<div class="notice bad">No check-in today with code ' + esc(code) + '. Please check the tag or see a volunteer.</div>';
+        actions.innerHTML = '';
+        return;
+      }
+      box.innerHTML = r.checkins.map((c) => '<div class="kid ' + (c.checked_out_local ? 'checked' : '') + '" data-id="' + c.id + '" style="cursor:default">'
+        + '<div class="info"><div class="name">' + esc(c.first_name) + ' ' + esc(c.last_name) + '</div><div class="sub">'
+        + '<span class="chip chip-room">' + esc(c.classroom_name || 'No classroom') + '</span>'
+        + (c.checked_out_local ? '<span class="chip chip-ok">✓ Checked out ' + esc(c.checked_out_time) + '</span>' : '<span class="chip">Checked in ' + esc(c.checked_in_time) + '</span>')
+        + '</div></div><div class="actions">'
+        + (c.checked_out_local ? '<button class="btn btn-sm btn-ghost" data-act="undo">Undo</button>' : '<button class="btn btn-sm btn-success" data-act="checkout">Check out</button>')
+        + '</div></div>').join('');
+      const here = r.checkins.filter((c) => !c.checked_out_local);
+      actions.innerHTML = (here.length > 1 ? '<button class="btn btn-success btn-lg" id="checkoutAll">Check out all ' + here.length + '</button>' : '')
+        + (here.length ? '' : '<span class="notice ok">All checked out — thank you!</span>')
+        + '<button class="btn btn-secondary btn-lg" id="pickupDone">Done</button>';
+      box.onclick = async (e) => {
+        const btn = e.target.closest('[data-act]');
+        if (!btn) return;
+        const id = btn.closest('.kid').dataset.id;
+        try {
+          if (btn.dataset.act === 'checkout') await Api.post('/api/checkins/' + id + '/checkout', { local_time: Api.localTime() });
+          if (btn.dataset.act === 'undo') await Api.post('/api/checkins/' + id + '/undo-checkout');
+          await lookupCode();
+        } catch (ex) { Toast.show(ex.message, 'error'); }
+      };
+      const all = $('#checkoutAll');
+      if (all) all.addEventListener('click', async () => {
+        try {
+          for (const c of here) await Api.post('/api/checkins/' + c.id + '/checkout', { local_time: Api.localTime() });
+          Toast.show('Checked out ' + here.map((c) => c.first_name).join(', ') + '. Thank you!', 'ok');
+          await lookupCode();
+        } catch (ex) { Toast.show(ex.message, 'error'); }
+      });
+      $('#pickupDone').addEventListener('click', showHome);
+    } catch (e) {
+      box.innerHTML = '<div class="notice bad">' + esc(e.message) + '</div>';
+      actions.innerHTML = '';
+    }
   }
 
   async function search(q) {

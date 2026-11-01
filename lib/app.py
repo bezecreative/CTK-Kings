@@ -678,6 +678,23 @@ def h_checkin(req, db):
     }
 
 
+def h_pickup(req, db):
+    """Today's check-ins for a pickup code (kiosk check-out screen)."""
+    code = (req.query.get("code") or "").strip().upper()
+    date = req.query.get("date") or today_iso()
+    if len(code) < 3:
+        raise ApiError(400, "Enter the 4-character pickup code")
+    rows = db.query(
+        """SELECT c.*, f.name AS family_name FROM checkins c JOIN families f ON f.id = c.family_id
+           WHERE c.service_date = :d AND c.code = :code ORDER BY c.first_name, c.last_name""", d=date, code=code)
+    out = []
+    for r in rows:
+        item = checkin_out(r)
+        item["family_name"] = r["family_name"]
+        out.append(item)
+    return {"code": code, "checkins": out, "family_name": rows[0]["family_name"] if rows else None}
+
+
 def h_checkout(req, db, cid):
     c = db.one("SELECT * FROM checkins WHERE id = :id", id=cid)
     if not c:
@@ -881,8 +898,9 @@ ROUTES = [
     ("PUT", r"/api/people/([a-f0-9]+)", h_update_person, "kiosk"),
     ("DELETE", r"/api/people/([a-f0-9]+)", h_delete_person, "admin"),
     ("POST", r"/api/checkins", h_checkin, "kiosk"),
+    ("GET", r"/api/pickup", h_pickup, "kiosk"),
     ("POST", r"/api/checkins/([a-f0-9]+)/checkout", h_checkout, "kiosk"),
-    ("POST", r"/api/checkins/([a-f0-9]+)/undo-checkout", h_undo_checkout, "admin"),
+    ("POST", r"/api/checkins/([a-f0-9]+)/undo-checkout", h_undo_checkout, "kiosk"),
     ("DELETE", r"/api/checkins/([a-f0-9]+)", h_delete_checkin, "kiosk"),  # "undo check-in" at the kiosk too
     ("POST", r"/api/labels/reprint", h_reprint, "kiosk"),
     ("POST", r"/api/labels/preview", h_label_preview, "admin"),
