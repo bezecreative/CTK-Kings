@@ -144,7 +144,7 @@ def _people_from(records, mapping):
 
 def _cluster(people):
     uf = UnionFind(len(people))
-    by_phone, by_addr, by_household = defaultdict(list), defaultdict(list), defaultdict(list)
+    by_phone, by_addr, by_household, by_email = defaultdict(list), defaultdict(list), defaultdict(list), defaultdict(list)
     for idx, p in enumerate(people):
         for ph in p["phones"]:
             by_phone[ph].append(idx)
@@ -152,7 +152,12 @@ def _cluster(people):
             by_addr[(p["last_name"].lower(), p["street"])].append(idx)
         if p["household"]:
             by_household[p["household"].lower()].append(idx)
-    for group in list(by_phone.values()) + list(by_addr.values()) + list(by_household.values()):
+        if p["email"]:
+            by_email[p["email"]].append(idx)
+    # A shared email joins people too (a child often carries a parent's email), unless it looks
+    # like a generic address used by many unrelated rows.
+    email_groups = [g for g in by_email.values() if 1 < len(g) <= 6]
+    for group in list(by_phone.values()) + list(by_addr.values()) + list(by_household.values()) + email_groups:
         for idx in group[1:]:
             uf.union(group[0], idx)
 
