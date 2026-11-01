@@ -634,7 +634,7 @@ def h_checkin(req, db):
         raise ApiError(400, "Select at least one child")
     for c in chosen:
         if c["age"] is None and not c["classroom_override"]:
-            raise ApiError(400, "%s needs a birthday before checking in" % c["first_name"])
+            raise ApiError(400, "%s needs a birthday or a classroom before checking in" % c["first_name"])
 
     already = [c for c in chosen if c.get("checkin") and not c["checkin"].get("checked_out_local")]
     fresh = [c for c in chosen if c not in already]

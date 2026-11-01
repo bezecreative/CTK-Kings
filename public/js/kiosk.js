@@ -261,14 +261,14 @@
     const cls = ci ? 'checked' : needs ? 'needs' : sel ? 'selected' : '';
     const chips = [];
     if (ci) chips.push('<span class="chip chip-ok">✓ Checked in ' + esc(ci.checked_in_time) + (ci.classroom_name ? ' · ' + esc(ci.classroom_name) : '') + '</span>');
-    else if (needs) chips.push('<span class="chip chip-warn">Birthday needed</span>');
+    else if (needs) chips.push('<span class="chip chip-warn">Birthday or classroom needed</span>');
     else { chips.push(roomChip(k)); if (k.age !== null) chips.push('<span class="chip">Age ' + esc(k.age) + '</span>'); }
     if (k.allergies) chips.push('<span class="chip chip-danger">⚠ ' + esc(k.allergies) + '</span>');
     if (k.notes) chips.push('<span class="chip chip-note">' + esc(k.notes) + '</span>');
     let actions = '';
     if (ci) actions = '<button class="btn btn-sm btn-secondary" data-act="reprint">Reprint label</button>'
       + '<button class="btn btn-sm btn-ghost" data-act="undo">Undo check-in</button><button class="btn btn-sm btn-ghost" data-act="edit">Edit</button>';
-    else actions = (needs ? '<button class="btn btn-sm btn-primary" data-act="birthday">Add birthday</button>' : '') + '<button class="btn btn-sm btn-ghost" data-act="edit">Edit</button>';
+    else actions = (needs ? '<button class="btn btn-sm btn-primary" data-act="birthday">Set birthday / classroom</button>' : '') + '<button class="btn btn-sm btn-ghost" data-act="edit">Edit</button>';
     return '<div class="kid ' + cls + '" data-id="' + k.id + '"><div class="box">' + (ci || sel ? '✓' : '') + '</div>'
       + '<div class="info"><div class="name">' + esc(k.first_name) + ' ' + esc(k.last_name) + '</div><div class="sub">' + chips.join('') + '</div><div class="editor"></div></div>'
       + '<div class="actions">' + actions + '</div></div>';
@@ -312,8 +312,9 @@
     return '<form class="inline-form" data-mode="' + mode + '"><div class="form-grid">'
       + (full ? '<div class="field"><label>First name</label><input class="input" name="first_name" value="' + esc(k.first_name || '') + '" required autocapitalize="words"></div>'
         + '<div class="field"><label>Last name</label><input class="input" name="last_name" value="' + esc(k.last_name || '') + '" autocapitalize="words"></div>' : '')
-      + '<div class="field"><label>Birthday</label><input class="input" type="date" name="birthdate" value="' + esc(k.birthdate || '') + '" max="' + Api.localDate() + '" required></div>'
-      + (full ? roomSelect(k)
+      + '<div class="field"><label>Birthday (or pick a classroom)</label><input class="input" type="date" name="birthdate" value="' + esc(k.birthdate || '') + '" max="' + Api.localDate() + '"></div>'
+      + roomSelect(k)
+      + (full ? ''
         + '<div class="field"><label>Allergies</label><input class="input" name="allergies" value="' + esc(k.allergies || '') + '" placeholder="e.g. peanuts, dairy"></div>'
         + '<div class="field"><label>Notes for the classroom</label><input class="input" name="notes" value="' + esc(k.notes || '') + '" placeholder="e.g. needs inhaler, shy at drop-off"></div>' : '')
       + '</div><div class="row mt"><button class="btn btn-primary" type="submit">Save</button><button class="btn btn-secondary" type="button" data-act="cancel">Cancel</button>'
@@ -340,6 +341,10 @@
       data.date = Api.localDate();
       const err = $('[data-err]', form);
       err.textContent = '';
+      if (!data.birthdate && !data.classroom_override && (!k || !k.birthdate)) {
+        err.textContent = 'Enter a birthday or choose a classroom.';
+        return;
+      }
       try {
         let r;
         if (k) r = await Api.put('/api/people/' + k.id, data);
@@ -480,7 +485,7 @@
     const childRow = () => el('<div class="inline-form"><div class="form-grid">'
       + '<div class="field"><label>First name</label><input class="input" name="first_name" required autocapitalize="words"></div>'
       + '<div class="field"><label>Last name</label><input class="input" name="last_name" autocapitalize="words"></div>'
-      + '<div class="field"><label>Birthday</label><input class="input" type="date" name="birthdate" required max="' + Api.localDate() + '"></div>'
+      + '<div class="field"><label>Birthday (or pick a classroom)</label><input class="input" type="date" name="birthdate" max="' + Api.localDate() + '"></div>'
       + roomSelect({})
       + '<div class="field"><label>Allergies</label><input class="input" name="allergies" placeholder="e.g. peanuts, dairy"></div>'
       + '<div class="field"><label>Notes for the classroom</label><input class="input" name="notes" placeholder="e.g. needs inhaler"></div>'
@@ -506,6 +511,8 @@
       body.children.forEach((c) => { if (!c.last_name) c.last_name = body.parents[0].last_name; });
       const err = $('#nfErr');
       err.textContent = '';
+      const missing = body.children.find((c) => c.first_name && !c.birthdate && !c.classroom_override);
+      if (missing) { err.textContent = 'Enter a birthday or choose a classroom for ' + missing.first_name + '.'; return; }
       const btn = $('#nf button[type=submit]');
       btn.disabled = true;
       try {
