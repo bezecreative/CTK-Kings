@@ -108,12 +108,20 @@ def pg_url():
     return None
 
 
+class NoDatabase(RuntimeError):
+    """Deployed on Vercel without a Postgres connection string."""
+
+
 class Db:
     def __init__(self):
         url = pg_url()
         if url:
             self.kind = "pg"
             self.con = self._connect_pg(url)
+        elif os.environ.get("VERCEL"):
+            raise NoDatabase(
+                "No database is connected yet. In Vercel open the project's Storage tab, Create Database → Neon (Postgres), "
+                "connect it to this project, then Deployments → Redeploy.")
         else:
             self.kind = "sqlite"
             os.makedirs(os.path.dirname(SQLITE_PATH), exist_ok=True)

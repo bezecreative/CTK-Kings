@@ -15,7 +15,7 @@ import traceback
 from urllib.parse import parse_qs
 
 from . import labels as L
-from .db import (Db, DEFAULT_SETTINGS, age_on, classroom_for, digits, format_phone, hash_pin, new_id,
+from .db import (Db, DEFAULT_SETTINGS, NoDatabase, age_on, classroom_for, digits, format_phone, hash_pin, new_id,
                  now_iso, sign_token, utcnow, verify_pin, verify_token)
 from .importer import detect_mapping, parse_csv, propose_households
 
@@ -939,6 +939,8 @@ def app(environ, start_response):
         resp = dispatch(req, db)
     except ApiError as e:
         resp = Response(json.dumps({"error": e.message}), status=e.status)
+    except NoDatabase as e:
+        resp = Response(json.dumps({"error": str(e), "setup": "database"}), status=503)
     except Exception as e:  # noqa: BLE001
         traceback.print_exc(file=sys.stderr)
         detail = {"error": "Server error: %s" % (str(e)[:300] or e.__class__.__name__)}
