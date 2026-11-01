@@ -106,18 +106,12 @@ def child_label(fields, label_cfg):
     bar_x = W - m - bar_w
     if code:
         c.box(bar_x, top, bar_w, bottom - top, fill=True, rounding=2)
-        n = len(code)
-        glyph = int(min(bar_w * 0.62, (bottom - top) * 0.78 / max(n, 1) * 0.82))
-        slot = (bottom - top) * 0.78 / max(n, 1)
+        n = max(len(code), 1)
+        slot = (bottom - top) * 0.94 / n
+        glyph = int(min(bar_w * 0.62, slot * 0.82))
         for i, ch in enumerate(code):
-            cy = top + int(slot * i + (slot - glyph) / 2) + int((bottom - top) * 0.02)
+            cy = top + int((bottom - top) * 0.03 + slot * i + (slot - glyph) / 2)
             c.text(bar_x, cy, glyph, ch, bar_w, "C", reverse=True)
-        # check mark at the bottom of the bar
-        mark = int(bar_w * 0.45)
-        mx = bar_x + (bar_w - mark) // 2
-        my = bottom - int((bottom - top) * 0.11) - mark // 2
-        c.diagonal(mx, my + mark // 3, mark // 2 + 1, mark * 2 // 3, max(mark // 7, 2), "L", "W")
-        c.diagonal(mx + mark // 2 - mark // 10, my, mark // 2 + mark // 10, mark, max(mark // 7, 2), "R", "W")
 
     # Left column
     col_w = bar_x - m - (int(W * 0.04) if code else 0)

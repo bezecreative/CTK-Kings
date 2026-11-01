@@ -16,8 +16,7 @@ const LabelPreview = (() => {
       + '.lbl-allergy{font-size:0.075em;min-height:0.09em;line-height:1.2;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}'
       + '.lbl-foot{display:flex;justify-content:space-between;gap:0.3em;font-size:0.065em;margin-top:auto;font-weight:600;white-space:nowrap}'
       + '.lbl-foot span{overflow:hidden;text-overflow:ellipsis}'
-      + '.lbl-bar{flex:0 0 16.5%;background:#000;color:#fff;border-radius:0.035em;display:flex;flex-direction:column;align-items:center;padding:0.03em 0;font-size:0.135em;font-weight:800;line-height:1.25}'
-      + '.lbl-bar .chk{margin-top:auto;font-size:0.85em}'
+      + '.lbl-bar{flex:0 0 16.5%;background:#000;color:#fff;border-radius:0.035em;display:flex;flex-direction:column;align-items:center;justify-content:space-evenly;padding:0.03em 0;font-size:0.14em;font-weight:800;line-height:1.1}'
       + '.lbl-parent{flex-direction:column;align-items:center;justify-content:center;text-align:center;gap:0.04em}'
       + '.lbl-org{font-size:0.055em;font-weight:600}'
       + '.lbl-pstamp{font-size:0.12em;white-space:nowrap}'
@@ -70,7 +69,7 @@ const LabelPreview = (() => {
       + '<div class="lbl-rule"></div>'
       + '<div class="lbl-foot"><span>' + esc(f.parent_name || '') + '</span><span>' + esc(f.parent_phone || '') + '</span></div>'
       + '</div>'
-      + (showCode ? '<div class="lbl-bar">' + String(f.code).split('').map((ch) => '<span>' + esc(ch) + '</span>').join('') + '<span class="chk">✓</span></div>' : '')
+      + (showCode ? '<div class="lbl-bar">' + String(f.code).split('').map((ch) => '<span>' + esc(ch) + '</span>').join('') + '</div>' : '')
       + '</div>';
   }
 

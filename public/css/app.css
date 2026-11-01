@@ -113,7 +113,7 @@ a { color: var(--primary); }
 .btn-danger { background: var(--danger-bg); color: var(--danger); }
 .btn-success { background: var(--success); color: #fff; }
 .btn-lg { font-size: 1.15em; min-height: 62px; padding: 14px 28px; border-radius: 16px; }
-.btn-sm { min-height: 36px; padding: 6px 12px; font-size: 0.85em; border-radius: 9px; }
+.btn-sm { min-height: 36px; padding: 6px 12px; font-size: 0.85em; border-radius: 9px; white-space: nowrap; }
 .btn-block { width: 100%; }
 .btn-icon { width: 44px; height: 44px; padding: 0; border-radius: 50%; min-height: 0; }
 

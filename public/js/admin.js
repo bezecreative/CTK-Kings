@@ -130,7 +130,8 @@
     const allRows = roster.classrooms.flatMap((r) => r.checkins).concat(roster.unassigned);
     const families = new Set(allRows.map((c) => c.family_id)).size;
     const allergies = allRows.filter((c) => c.allergies).length;
-    $('#stats').innerHTML = '<div class="stat"><div class="n">' + roster.total + '</div><div class="l">Kids checked in</div></div>'
+    $('#stats').innerHTML = '<div class="stat"><div class="n">' + roster.present + '</div><div class="l">Kids here now</div></div>'
+      + '<div class="stat"><div class="n">' + (roster.total - roster.present) + '</div><div class="l">Checked out</div></div>'
       + '<div class="stat"><div class="n">' + families + '</div><div class="l">Families</div></div>'
       + '<div class="stat"><div class="n">' + allergies + '</div><div class="l">With allergies</div></div>';
     const rooms = roster.classrooms.map((r) => roomBlock(r.name, r.id, r.checkins));
@@ -142,16 +143,21 @@
   }
 
   function roomBlock(name, id, list) {
-    return '<div class="room"><div class="room-head" style="' + (id ? roomStyle(id) : 'background:#e5e7eb') + '"><span>' + esc(name) + '</span><span>' + list.length + (list.length === 1 ? ' kid' : ' kids') + '</span></div>'
+    const here = list.filter((c) => !c.checked_out_local).length;
+    const count = here === list.length ? list.length + (list.length === 1 ? ' kid' : ' kids') : here + ' here · ' + list.length + ' today';
+    return '<div class="room"><div class="room-head" style="' + (id ? roomStyle(id) : 'background:#e5e7eb') + '"><span>' + esc(name) + '</span><span>' + count + '</span></div>'
       + '<div class="room-list">' + (list.length ? list.map(checkinRow).join('') : '<div class="muted small" style="padding:8px">Nobody yet</div>') + '</div></div>';
   }
 
   function checkinRow(c) {
-    return '<div class="ci" data-id="' + c.id + '"><div class="who"><div class="n">' + esc(c.first_name) + ' ' + esc(c.last_name) + ' <span class="kbd">' + esc(c.code) + '</span>'
-      + (c.allergies ? ' <span class="chip chip-danger">⚠ ' + esc(c.allergies) + '</span>' : '') + '</div>'
-      + '<div class="m">' + esc([c.age !== null && c.age !== undefined ? 'Age ' + c.age : '', c.checked_in_time, c.family_name, c.family_phone_display].filter(Boolean).join(' · '))
+    const out = !!c.checked_out_local;
+    return '<div class="ci' + (out ? ' out' : '') + '" data-id="' + c.id + '"><div class="who"><div class="n">' + esc(c.first_name) + ' ' + esc(c.last_name) + ' <span class="kbd">' + esc(c.code) + '</span>'
+      + (c.allergies ? ' <span class="chip chip-danger">⚠ ' + esc(c.allergies) + '</span>' : '') + (out ? ' <span class="chip chip-ok">Out ' + esc(c.checked_out_time) + '</span>' : '') + '</div>'
+      + '<div class="m">' + esc([c.age !== null && c.age !== undefined ? 'Age ' + c.age : '', 'In ' + c.checked_in_time, c.family_name, c.family_phone_display].filter(Boolean).join(' · '))
       + (c.notes ? '<div class="chip chip-note" style="margin-top:4px">' + esc(c.notes) + '</div>' : '') + '</div></div>'
-      + '<div class="row" style="gap:6px"><button class="btn btn-sm btn-secondary" data-act="reprint" title="Reprint label">Reprint</button><button class="btn btn-sm btn-ghost" data-act="delete" title="Remove this check-in">✕</button></div></div>';
+      + '<div class="row" style="gap:6px">'
+      + (out ? '<button class="btn btn-sm btn-ghost" data-act="undo">Undo</button>' : '<button class="btn btn-sm btn-success" data-act="checkout">Check out</button>')
+      + '<button class="btn btn-sm btn-secondary" data-act="reprint" title="Reprint label">Reprint</button></div></div>';
   }
 
   async function onRosterAction(e) {
@@ -160,7 +166,8 @@
     const row = btn.closest('.ci');
     const id = row.dataset.id;
     try {
-      if (btn.dataset.act === 'delete') { if (!(await confirmDialog('Remove this check-in record?'))) return; await Api.del('/api/checkins/' + id); }
+      if (btn.dataset.act === 'checkout') await Api.post('/api/checkins/' + id + '/checkout', { local_time: Api.localTime() });
+      if (btn.dataset.act === 'undo') await Api.post('/api/checkins/' + id + '/undo-checkout');
       if (btn.dataset.act === 'reprint') {
         const r = await Api.post('/api/labels/reprint', { checkin_ids: [id], parent: false });
         await Printer.printLabels(r.labels, state.settings.print_method, state.settings.label);
@@ -179,10 +186,20 @@
     const all = roster.classrooms.flatMap((r) => r.checkins.map((c) => Object.assign({ room: r.name }, c))).concat(roster.unassigned.map((c) => Object.assign({ room: 'No classroom' }, c)));
     const matches = all.filter((c) => c.code.startsWith(code));
     if (!matches.length) { box.innerHTML = '<div class="notice bad mb">No check-in today with code ' + esc(code) + '. Do not release a child without a matching code.</div>'; return; }
-    box.innerHTML = '<div class="card mb"><div class="card-title"><h3>Code ' + esc(code) + ' → ' + matches.length + (matches.length === 1 ? ' child' : ' children') + '</h3><span class="chip chip-ok">✓ Match — compare with the child\'s label</span></div>'
-      + matches.map((c) => '<div class="ci"><div class="who"><div class="n">' + esc(c.first_name) + ' ' + esc(c.last_name) + ' <span class="kbd">' + esc(c.code) + '</span> <span class="chip chip-room" style="' + roomStyle(c.classroom) + '">' + esc(c.room) + '</span>'
-        + (c.allergies ? ' <span class="chip chip-danger">⚠ ' + esc(c.allergies) + '</span>' : '') + '</div><div class="m">' + esc(c.family_name + ' · ' + c.family_phone_display + ' · checked in ' + c.checked_in_time) + '</div></div></div>').join('')
+    const here = matches.filter((c) => !c.checked_out_local);
+    box.innerHTML = '<div class="card mb"><div class="card-title"><h3>Code ' + esc(code) + ' → ' + matches.length + (matches.length === 1 ? ' child' : ' children') + '</h3>'
+      + (here.length ? '<button class="btn btn-success" id="checkoutAll">Check out ' + (here.length === 1 ? here[0].first_name : 'all ' + here.length) + '</button>' : '<span class="chip chip-ok">All checked out</span>') + '</div>'
+      + matches.map((c) => '<div class="ci' + (c.checked_out_local ? ' out' : '') + '"><div class="who"><div class="n">' + esc(c.first_name) + ' ' + esc(c.last_name) + ' <span class="kbd">' + esc(c.code) + '</span> <span class="chip chip-room" style="' + roomStyle(c.classroom) + '">' + esc(c.room) + '</span>'
+        + (c.allergies ? ' <span class="chip chip-danger">⚠ ' + esc(c.allergies) + '</span>' : '') + (c.checked_out_local ? ' <span class="chip chip-ok">Out ' + esc(c.checked_out_time) + '</span>' : '') + '</div><div class="m">' + esc(c.family_name + ' · ' + c.family_phone_display + ' · in ' + c.checked_in_time) + '</div></div></div>').join('')
       + '</div>';
+    const b = $('#checkoutAll');
+    if (b) b.addEventListener('click', async () => {
+      try {
+        for (const c of here) await Api.post('/api/checkins/' + c.id + '/checkout', { local_time: Api.localTime() });
+        Toast.show('Checked out ' + here.map((c) => c.first_name).join(', '), 'ok');
+        await loadRoster();
+      } catch (ex) { Toast.show(ex.message, 'error'); }
+    });
   }
 
   /* ---- families -------------------------------------------------------- */

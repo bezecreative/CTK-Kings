@@ -829,11 +829,11 @@ def h_export_checkins(req, db):
     rows = db.query(
         """SELECT c.*, f.name AS family_name, f.phone AS family_phone FROM checkins c JOIN families f ON f.id = c.family_id
            WHERE c.service_date >= :s AND c.service_date <= :e ORDER BY c.service_date, c.checked_in_local""", s=start, e=end)
-    out = [[c["service_date"], c["checked_in_local"][11:16], c["first_name"],
+    out = [[c["service_date"], c["checked_in_local"][11:16], (c.get("checked_out_local") or "")[11:16], c["first_name"],
             c["last_name"], c.get("age"), c.get("classroom_name") or "", c.get("allergies") or "", c.get("notes") or "",
             c["code"], c["family_name"], format_phone(c.get("family_phone"))] for c in rows]
     return csv_response("checkins-%s-to-%s.csv" % (start, end),
-                        ["Date", "Time", "First Name", "Last Name", "Age", "Classroom", "Allergies", "Notes",
+                        ["Date", "Time In", "Time Out", "First Name", "Last Name", "Age", "Classroom", "Allergies", "Notes",
                          "Code", "Family", "Family Phone"], out)
 
 
