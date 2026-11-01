@@ -272,11 +272,11 @@
     $('#spouseCancel').addEventListener('click', () => { panel.innerHTML = ''; });
     $('#spouseNew').addEventListener('click', () => {
       const last = (state.family.parents[0] && state.family.parents[0].last_name) || '';
-      $('#spouseForm').innerHTML = '<form class="inline-form" style="background:#fff"><div class="form-grid">'
-        + '<div class="field"><label>First name</label><input class="input" name="first_name" required autocapitalize="words"></div>'
-        + '<div class="field"><label>Last name</label><input class="input" name="last_name" value="' + esc(last) + '" autocapitalize="words"></div>'
-        + '<div class="field"><label>Mobile phone</label><input class="input" name="phone" type="tel" inputmode="tel"></div>'
-        + '<div class="field"><label>Email (optional)</label><input class="input" name="email" type="email"></div></div>'
+      $('#spouseForm').innerHTML = '<form class="inline-form" autocomplete="off" style="background:#fff"><div class="form-grid">'
+        + '<div class="field"><label>First name</label><input class="input" autocomplete="off" name="first_name" required autocapitalize="words"></div>'
+        + '<div class="field"><label>Last name</label><input class="input" autocomplete="off" name="last_name" value="' + esc(last) + '" autocapitalize="words"></div>'
+        + '<div class="field"><label>Mobile phone</label><input class="input" autocomplete="off" name="phone" type="tel" inputmode="tel"></div>'
+        + '<div class="field"><label>Email (optional)</label><input class="input" autocomplete="off" name="email" type="email"></div></div>'
         + '<div class="row mt"><button class="btn btn-primary" type="submit">Add parent</button></div><div class="error mt" data-err></div></form>';
       const form = $('#spouseForm form');
       $('input', form).focus();
@@ -386,14 +386,14 @@
 
   function childForm(k, mode) {
     const full = mode !== 'birthday';
-    return '<form class="inline-form" data-mode="' + mode + '"><div class="form-grid">'
-      + (full ? '<div class="field"><label>First name</label><input class="input" name="first_name" value="' + esc(k.first_name || '') + '" required autocapitalize="words"></div>'
-        + '<div class="field"><label>Last name</label><input class="input" name="last_name" value="' + esc(k.last_name || '') + '" autocapitalize="words"></div>' : '')
-      + '<div class="field"><label>Birthday (or pick a classroom)</label><input class="input" type="date" name="birthdate" value="' + esc(k.birthdate || '') + '" max="' + Api.localDate() + '"></div>'
+    return '<form class="inline-form" autocomplete="off" data-mode="' + mode + '"><div class="form-grid">'
+      + (full ? '<div class="field"><label>First name</label><input class="input" autocomplete="off" name="first_name" value="' + esc(k.first_name || '') + '" required autocapitalize="words"></div>'
+        + '<div class="field"><label>Last name</label><input class="input" autocomplete="off" name="last_name" value="' + esc(k.last_name || '') + '" autocapitalize="words"></div>' : '')
+      + '<div class="field"><label>Birthday (or pick a classroom)</label><input class="input" autocomplete="off" type="date" name="birthdate" value="' + esc(k.birthdate || '') + '" max="' + Api.localDate() + '"></div>'
       + roomSelect(k)
       + (full ? ''
-        + '<div class="field"><label>Allergies</label><input class="input" name="allergies" value="' + esc(k.allergies || '') + '" placeholder="e.g. peanuts, dairy"></div>'
-        + '<div class="field"><label>Notes for the classroom</label><input class="input" name="notes" value="' + esc(k.notes || '') + '" placeholder="e.g. needs inhaler, shy at drop-off"></div>' : '')
+        + '<div class="field"><label>Allergies</label><input class="input" autocomplete="off" name="allergies" value="' + esc(k.allergies || '') + '" placeholder="e.g. peanuts, dairy"></div>'
+        + '<div class="field"><label>Notes for the classroom</label><input class="input" autocomplete="off" name="notes" value="' + esc(k.notes || '') + '" placeholder="e.g. needs inhaler, shy at drop-off"></div>' : '')
       + '</div><div class="row mt"><button class="btn btn-primary" type="submit">Save</button><button class="btn btn-secondary" type="button" data-act="cancel">Cancel</button>'
       + (mode === 'edit' ? '<button class="btn btn-ghost btn-sm" type="button" data-act="adult">This is a parent, not a child</button>' : '')
       + '</div><div class="error mt" data-err></div></form>';
@@ -545,7 +545,7 @@
     render('<div class="shell">'
       + '<div class="topbar grid-top"><button class="btn btn-secondary" id="back">‹ Back</button>' + brand() + '<div></div></div>'
       + '<div class="card"><h1>Add your family</h1><p class="muted">We\'ll remember you next time — just type your name or phone number.</p>'
-      + '<form id="nf"><h3>Parent / guardian</h3><div id="parents" class="stack"></div>'
+      + '<form id="nf" autocomplete="off"><h3>Parent / guardian</h3><div id="parents" class="stack"></div>'
       + '<button type="button" class="btn btn-ghost btn-sm" id="addParent">+ Add another parent</button>'
       + '<h3 class="mt">Children</h3><div id="children" class="stack"></div>'
       + '<button type="button" class="btn btn-ghost btn-sm" id="addKid">+ Add another child</button>'
@@ -554,18 +554,18 @@
     $('#back').addEventListener('click', showHome);
     const parents = $('#parents'), children = $('#children');
     const parentRow = () => el('<div class="inline-form"><div class="form-grid">'
-      + '<div class="field"><label>First name</label><input class="input" name="first_name" required autocapitalize="words"></div>'
-      + '<div class="field"><label>Last name</label><input class="input" name="last_name" required autocapitalize="words"></div>'
-      + '<div class="field"><label>Mobile phone</label><input class="input" name="phone" type="tel" inputmode="tel" required placeholder="(208) 555-0123"></div>'
-      + '<div class="field"><label>Email (optional)</label><input class="input" name="email" type="email" inputmode="email"></div>'
+      + '<div class="field"><label>First name</label><input class="input" autocomplete="off" name="first_name" required autocapitalize="words"></div>'
+      + '<div class="field"><label>Last name</label><input class="input" autocomplete="off" name="last_name" required autocapitalize="words"></div>'
+      + '<div class="field"><label>Mobile phone</label><input class="input" autocomplete="off" name="phone" type="tel" inputmode="tel" required placeholder="(208) 555-0123"></div>'
+      + '<div class="field"><label>Email (optional)</label><input class="input" autocomplete="off" name="email" type="email" inputmode="email"></div>'
       + '</div><div class="row mt"><button type="button" class="btn btn-ghost btn-sm" data-remove>Remove</button></div></div>');
     const childRow = () => el('<div class="inline-form"><div class="form-grid">'
-      + '<div class="field"><label>First name</label><input class="input" name="first_name" required autocapitalize="words"></div>'
-      + '<div class="field"><label>Last name</label><input class="input" name="last_name" autocapitalize="words"></div>'
-      + '<div class="field"><label>Birthday (or pick a classroom)</label><input class="input" type="date" name="birthdate" max="' + Api.localDate() + '"></div>'
+      + '<div class="field"><label>First name</label><input class="input" autocomplete="off" name="first_name" required autocapitalize="words"></div>'
+      + '<div class="field"><label>Last name</label><input class="input" autocomplete="off" name="last_name" autocapitalize="words"></div>'
+      + '<div class="field"><label>Birthday (or pick a classroom)</label><input class="input" autocomplete="off" type="date" name="birthdate" max="' + Api.localDate() + '"></div>'
       + roomSelect({})
-      + '<div class="field"><label>Allergies</label><input class="input" name="allergies" placeholder="e.g. peanuts, dairy"></div>'
-      + '<div class="field"><label>Notes for the classroom</label><input class="input" name="notes" placeholder="e.g. needs inhaler"></div>'
+      + '<div class="field"><label>Allergies</label><input class="input" autocomplete="off" name="allergies" placeholder="e.g. peanuts, dairy"></div>'
+      + '<div class="field"><label>Notes for the classroom</label><input class="input" autocomplete="off" name="notes" placeholder="e.g. needs inhaler"></div>'
       + '</div><div class="row mt"><button type="button" class="btn btn-ghost btn-sm" data-remove>Remove</button></div></div>');
     const add = (box, make) => {
       const row = make();
