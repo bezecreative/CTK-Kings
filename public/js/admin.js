@@ -561,10 +561,20 @@
       + '<div class="bars">' + s.days.slice().reverse().map((d) => '<div class="bar-row"><div class="bar-label">' + esc(dayLabel(d.date)) + '</div><div class="bar-track">'
         + s.rooms.map((r) => { const n = d.rooms[r.id] || 0; return n ? '<div class="bar-seg" style="width:' + (n / max * 100) + '%;background:' + roomColor(r.id) + '" title="' + esc(r.name) + ': ' + n + '">' + (n / max > 0.08 ? n : '') + '</div>' : ''; }).join('')
         + '</div><div class="bar-total">' + d.kids + '</div></div>').join('') + '</div></div>'
-      + '<table class="table"><thead><tr><th>Week</th>' + s.rooms.map((r) => '<th>' + esc(r.name) + '</th>').join('') + '<th>Total kids</th><th>Families</th></tr></thead><tbody>'
-      + s.days.map((d) => '<tr><td><strong>' + esc(dayLabel(d.date)) + '</strong></td>' + s.rooms.map((r) => '<td>' + (d.rooms[r.id] || 0) + '</td>').join('') + '<td><strong>' + d.kids + '</strong></td><td>' + d.families + '</td></tr>').join('')
-      + '<tr><td class="muted">Average</td>' + s.rooms.map((r) => '<td class="muted">' + r.avg + '</td>').join('') + '<td class="muted">' + s.totals.avg_kids + '</td><td class="muted">' + s.totals.avg_families + '</td></tr>'
+      + '<table class="table"><thead><tr><th>Week</th>' + s.rooms.map((r) => '<th>' + esc(r.name) + '</th>').join('') + '<th>Total kids</th><th>Families</th><th></th></tr></thead><tbody>'
+      + s.days.map((d) => '<tr><td><strong>' + esc(dayLabel(d.date)) + '</strong></td>' + s.rooms.map((r) => '<td>' + (d.rooms[r.id] || 0) + '</td>').join('') + '<td><strong>' + d.kids + '</strong></td><td>' + d.families + '</td>'
+        + '<td><button class="btn btn-sm btn-ghost" data-delete-day="' + d.date + '" data-n="' + d.kids + '" title="Delete every check-in on this day">Remove day</button></td></tr>').join('')
+      + '<tr><td class="muted">Average</td>' + s.rooms.map((r) => '<td class="muted">' + r.avg + '</td>').join('') + '<td class="muted">' + s.totals.avg_kids + '</td><td class="muted">' + s.totals.avg_families + '</td><td></td></tr>'
       + '</tbody></table>';
+    $$('[data-delete-day]', body).forEach((b) => b.addEventListener('click', async () => {
+      const when = dayLabel(b.dataset.deleteDay);
+      if (!(await confirmDialog('Delete all ' + b.dataset.n + ' check-ins from ' + when + '? This cannot be undone.'))) return;
+      try {
+        const r = await Api.del('/api/days/' + b.dataset.deleteDay);
+        Toast.show('Removed ' + r.deleted + ' check-ins from ' + when + '.', 'ok');
+        go('stats');
+      } catch (ex) { Toast.show(ex.message, 'error', 6000); }
+    }));
   }
 
   /* ---- export ---------------------------------------------------------- */

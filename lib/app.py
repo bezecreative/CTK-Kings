@@ -795,6 +795,12 @@ def h_stats(req, db):
     return {"since": since, "until": today, "weeks_requested": weeks, "rooms": rooms, "days": days, "totals": totals}
 
 
+def h_delete_day(req, db, day):
+    """Remove every check-in on one service date (for clearing test days)."""
+    n = db.execute("DELETE FROM checkins WHERE service_date = :d", d=day)
+    return {"deleted": n, "date": day}
+
+
 def h_import_preview(req, db):
     text = req.body.get("csv") or ""
     if not text.strip():
@@ -945,6 +951,7 @@ ROUTES = [
     ("POST", r"/api/labels/preview", h_label_preview, "admin"),
     ("GET", r"/api/roster", h_roster, "admin"),
     ("GET", r"/api/stats", h_stats, "admin"),
+    ("DELETE", r"/api/days/(\d{4}-\d{2}-\d{2})", h_delete_day, "admin"),
     ("POST", r"/api/import/preview", h_import_preview, "admin"),
     ("POST", r"/api/import/commit", h_import_commit, "admin"),
     ("GET", r"/api/export/checkins", h_export_checkins, "admin"),
