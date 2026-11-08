@@ -266,6 +266,13 @@ a { color: var(--primary); }
 .member .hint { color: var(--muted); font-size: 0.85em; }
 .member .select { min-height: 36px; padding: 4px 8px; border-radius: 8px; }
 .toolbar { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; margin-bottom: 14px; }
+/* stats: one stacked bar per week */
+.bars { display: flex; flex-direction: column; gap: 8px; }
+.bar-row { display: grid; grid-template-columns: 110px 1fr 44px; gap: 10px; align-items: center; }
+.bar-label { font-size: 0.85em; color: var(--muted); white-space: nowrap; }
+.bar-track { display: flex; height: 26px; background: var(--surface-2); border-radius: 8px; overflow: hidden; }
+.bar-seg { display: grid; place-items: center; font-size: 0.78em; font-weight: 700; color: var(--text); min-width: 0; }
+.bar-total { font-weight: 800; text-align: right; }
 .toolbar .input { max-width: 360px; }
 .person-row { display: grid; grid-template-columns: 1fr 1fr 150px 1fr 1fr auto; gap: 8px; align-items: end; padding: 10px 0; border-top: 1px solid var(--border); }
 .person-row .field label { font-size: 0.72em; }

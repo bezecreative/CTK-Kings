@@ -3,7 +3,7 @@
   Api.setRole('admin');
   const app = $('#app');
   const state = { settings: null, tab: 'today', rosterDate: Api.localDate(), refreshTimer: null, importPreview: null };
-  const TABS = [['today', 'Today'], ['families', 'Families'], ['import', 'Import CSV'], ['settings', 'Settings'], ['export', 'Export']];
+  const TABS = [['today', 'Today'], ['stats', 'Stats'], ['families', 'Families'], ['import', 'Import CSV'], ['settings', 'Settings'], ['export', 'Export']];
   const LABEL_PRESETS = [
     ['2.25x1.25', '2.25 × 1.25 in (small)', 2.25, 1.25, false],
     ['3x2', '3 × 2 in', 3, 2, false],
@@ -106,7 +106,7 @@
     clearInterval(state.refreshTimer);
     const view = $('#view');
     view.innerHTML = '<div class="center"><span class="spinner"></span></div>';
-    ({ today: renderToday, families: renderFamilies, import: renderImport, settings: renderSettings, export: renderExport })[tab](view).catch((e) => {
+    ({ today: renderToday, stats: renderStats, families: renderFamilies, import: renderImport, settings: renderSettings, export: renderExport })[tab](view).catch((e) => {
       view.innerHTML = '<div class="card error">' + esc(e.message) + '</div>';
     });
   }
@@ -534,6 +534,37 @@
     return '<div class="room-row" data-id="' + esc(r.id || '') + '"><input class="input" name="name" value="' + esc(r.name) + '" placeholder="Classroom name" required>'
       + '<input class="input" name="max_age" type="number" min="0" max="25" value="' + esc(r.max_age) + '" placeholder="Max age" required>'
       + '<button type="button" class="btn btn-sm btn-ghost" data-remove>✕</button></div>';
+  }
+
+  /* ---- stats ----------------------------------------------------------- */
+  async function renderStats(view) {
+    const weeks = state.statsWeeks || 12;
+    view.innerHTML = '<div class="toolbar"><span class="label">Show the last</span>'
+      + [8, 12, 26, 52].map((w) => '<button class="btn btn-sm ' + (w === weeks ? 'btn-primary' : 'btn-secondary') + '" data-weeks="' + w + '">' + w + ' weeks</button>').join('')
+      + '</div><div id="statsBody"><div class="center"><span class="spinner"></span></div></div>';
+    $$('[data-weeks]', view).forEach((b) => b.addEventListener('click', () => { state.statsWeeks = Number(b.dataset.weeks); go('stats'); }));
+    const s = await Api.get('/api/stats?weeks=' + weeks + '&date=' + Api.localDate());
+    if (state.tab !== 'stats') return;
+    const body = $('#statsBody');
+    if (!s.days.length) { body.innerHTML = '<div class="card muted">No check-ins in the last ' + weeks + ' weeks yet.</div>'; return; }
+    const max = Math.max(...s.days.map((d) => d.kids), 1);
+    const dayLabel = (iso) => new Date(iso + 'T12:00:00').toLocaleDateString(undefined, { weekday: 'short', month: 'short', day: 'numeric' });
+    const roomColor = (id) => (id === 'none' ? '#e5e7eb' : roomStyle(id).replace('background:', ''));
+
+    body.innerHTML = '<div class="stats">'
+      + '<div class="stat"><div class="n">' + s.totals.avg_kids + '</div><div class="l">Kids per week (avg)</div></div>'
+      + '<div class="stat"><div class="n">' + s.totals.avg_families + '</div><div class="l">Families per week (avg)</div></div>'
+      + s.rooms.map((r) => '<div class="stat"><div class="n">' + r.avg + '</div><div class="l">' + esc(r.name) + ' (avg)</div></div>').join('')
+      + '</div>'
+      + '<div class="card mb"><div class="card-title"><h3>Week by week</h3><div class="row small">'
+      + s.rooms.map((r) => '<span class="chip chip-room" style="background:' + roomColor(r.id) + '">' + esc(r.name) + '</span>').join('') + '</div></div>'
+      + '<div class="bars">' + s.days.slice().reverse().map((d) => '<div class="bar-row"><div class="bar-label">' + esc(dayLabel(d.date)) + '</div><div class="bar-track">'
+        + s.rooms.map((r) => { const n = d.rooms[r.id] || 0; return n ? '<div class="bar-seg" style="width:' + (n / max * 100) + '%;background:' + roomColor(r.id) + '" title="' + esc(r.name) + ': ' + n + '">' + (n / max > 0.08 ? n : '') + '</div>' : ''; }).join('')
+        + '</div><div class="bar-total">' + d.kids + '</div></div>').join('') + '</div></div>'
+      + '<table class="table"><thead><tr><th>Week</th>' + s.rooms.map((r) => '<th>' + esc(r.name) + '</th>').join('') + '<th>Total kids</th><th>Families</th></tr></thead><tbody>'
+      + s.days.map((d) => '<tr><td><strong>' + esc(dayLabel(d.date)) + '</strong></td>' + s.rooms.map((r) => '<td>' + (d.rooms[r.id] || 0) + '</td>').join('') + '<td><strong>' + d.kids + '</strong></td><td>' + d.families + '</td></tr>').join('')
+      + '<tr><td class="muted">Average</td>' + s.rooms.map((r) => '<td class="muted">' + r.avg + '</td>').join('') + '<td class="muted">' + s.totals.avg_kids + '</td><td class="muted">' + s.totals.avg_families + '</td></tr>'
+      + '</tbody></table>';
   }
 
   /* ---- export ---------------------------------------------------------- */

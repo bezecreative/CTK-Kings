@@ -756,6 +756,45 @@ def h_roster(req, db):
     }
 
 
+def h_stats(req, db):
+    """Attendance per service date (one row per Sunday) broken down by classroom."""
+    try:
+        weeks = max(1, min(104, int(req.query.get("weeks", 12) or 12)))
+    except ValueError:
+        weeks = 12
+    today = norm_date(req.query.get("date")) or today_iso()
+    since = (datetime.date.fromisoformat(today) - datetime.timedelta(days=weeks * 7 - 1)).isoformat()
+    settings = db.settings()
+    rows = db.query(
+        """SELECT service_date, classroom, classroom_name, COUNT(DISTINCT person_id) AS kids
+           FROM checkins WHERE service_date >= :since AND service_date <= :today
+           GROUP BY service_date, classroom, classroom_name ORDER BY service_date DESC""", since=since, today=today)
+    fams = db.query(
+        """SELECT service_date, COUNT(DISTINCT family_id) AS families, COUNT(DISTINCT person_id) AS kids
+           FROM checkins WHERE service_date >= :since AND service_date <= :today GROUP BY service_date""", since=since, today=today)
+    by_date = {}
+    for f in fams:
+        by_date[f["service_date"]] = {"date": f["service_date"], "kids": f["kids"], "families": f["families"], "rooms": {}}
+    extra_rooms = {}
+    for r in rows:
+        key = r["classroom"] or "none"
+        by_date[r["service_date"]]["rooms"][key] = by_date[r["service_date"]]["rooms"].get(key, 0) + r["kids"]
+        if r["classroom"] and not any(c["id"] == r["classroom"] for c in settings["classrooms"]):
+            extra_rooms[r["classroom"]] = r["classroom_name"] or r["classroom"]
+    rooms = [{"id": c["id"], "name": c["name"]} for c in settings["classrooms"]]
+    rooms += [{"id": k, "name": v} for k, v in extra_rooms.items()]
+    if any("none" in d["rooms"] for d in by_date.values()):
+        rooms.append({"id": "none", "name": "No classroom"})
+    days = sorted(by_date.values(), key=lambda d: d["date"], reverse=True)
+    totals = {"weeks": len(days), "kids": sum(d["kids"] for d in days), "families": sum(d["families"] for d in days)}
+    totals["avg_kids"] = round(totals["kids"] / len(days), 1) if days else 0
+    totals["avg_families"] = round(totals["families"] / len(days), 1) if days else 0
+    for room in rooms:
+        room["total"] = sum(d["rooms"].get(room["id"], 0) for d in days)
+        room["avg"] = round(room["total"] / len(days), 1) if days else 0
+    return {"since": since, "until": today, "weeks_requested": weeks, "rooms": rooms, "days": days, "totals": totals}
+
+
 def h_import_preview(req, db):
     text = req.body.get("csv") or ""
     if not text.strip():
@@ -905,6 +944,7 @@ ROUTES = [
     ("POST", r"/api/labels/reprint", h_reprint, "kiosk"),
     ("POST", r"/api/labels/preview", h_label_preview, "admin"),
     ("GET", r"/api/roster", h_roster, "admin"),
+    ("GET", r"/api/stats", h_stats, "admin"),
     ("POST", r"/api/import/preview", h_import_preview, "admin"),
     ("POST", r"/api/import/commit", h_import_commit, "admin"),
     ("GET", r"/api/export/checkins", h_export_checkins, "admin"),
